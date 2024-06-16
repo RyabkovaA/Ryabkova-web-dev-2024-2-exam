@@ -4,5 +4,5 @@
 
 {% block content %}
     <h2>Добавление книги</h2>
-    {{ book_form( current_user,  genres, 'add', errors) }}
+    {{ book_form( current_user, genres, 'add', book, errors) }}
 {% endblock %}

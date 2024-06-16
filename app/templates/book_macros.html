@@ -63,7 +63,10 @@
     {% if action == 'add' %}
     <div class="mb-3">
         <label for="cover" class="form-label">Обложка</label>
-        <input class="form-control" type="file" id="cover" name="cover">
+        <input class="form-control {% if errors and errors.get('cover') %}is-invalid{% endif %}" type="file" id="cover" name="cover">
+        {% if errors and errors.get('cover') %}
+        <div class="invalid-feedback">{{ errors['cover'] }}</div>
+        {% endif %}
     </div>
     {% endif %}
     <button class="btn btn-primary">Сохранить</button>

@@ -5,7 +5,7 @@
     <div class="container my-3 d-flex flex-column">
         <div class="mb-3">
             <div class="container text-center">
-                <img src="{{ url_for('static', filename='images/' + book.cover_id|string + '.jpg') }}" class="img-fluid rounded-start" alt="{{ book.cover_name }}">
+                <img src="{{ url_for('static', filename='/images/books/' ~ book.filename ) }}" class="img-fluid rounded-start" alt="{{ book.cover_name }}">
             </div>
         </div>
         <div class="mb-3 text-center">
@@ -43,9 +43,9 @@
     <div class="container my-3 d-flex flex-column">
         {% if current_user.is_authenticated %}
             {% if user_review %}
-            <div class="container-fluid my-5"> 
+            <div class="container-fluid mb-5"> 
                 <h5>Моя рецензия</h5>      
-                <div class="d-flex bg">
+                <div class="d-flex bg mt-3">
                     <div class="flex-shrink-0">
                         <img src="{{ url_for('static', filename='images/icon2.png') }}" class="rounded-circle" alt="Sample Image">
                     </div>
@@ -88,8 +88,8 @@
                     </div>
                 </div>
                 {% endfor %}
-            {% else %}
-                <p>Ещёнет рецензий</p>
+            {% elif not user_review %}
+                <p>Ещё нет рецензий</p>
             {% endif %}
         {% endif %}
     </div>

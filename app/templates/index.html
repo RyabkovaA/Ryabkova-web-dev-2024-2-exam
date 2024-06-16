@@ -38,7 +38,7 @@
                         {% endif %}
                         {% if current_user.can('delete', user) %}
                             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal"
-                            data-delete-url="" 
+                            data-delete-url="{{ url_for('books.delete_book', book_id=book.id)}}" 
                             data-book-name="{{ book.name }}">Удалить</button>
                         {% endif %}
                         {% if current_user.can('show', user) %}
