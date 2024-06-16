@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<h2>Список книг</h2>
+<div class="container">
+    {% if books %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Название</th>
+                <th>Жанры</th>
+                <th>Год</th>
+                <th>Средняя оценка пользователей</th>
+                <th>Количество рецензий</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for book in books %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ book.name }}</td>
+                <td>
+                    {% for genre in book.genres %}
+                    <span>{{ genre.name }}</span>
+                    {% endfor %}
+                </td>
+                <td>{{ book.year_pub }}</td>
+                <td>{{ book.avg_score or 'Нет оценок'}}</td>
+                <td>{{ book.reviews_count or 'Нет рецензий' }}</td>
+                <td>
+                    
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.can('edit', user) %}
+                            <a class="btn btn-primary" href="{{ url_for('books.edit_book', book_id=book.id )}}">Редактировать</a>
+                        {% endif %}
+                        {% if current_user.can('delete', user) %}
+                            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal"
+                            data-delete-url="" 
+                            data-book-name="{{ book.name }}">Удалить</button>
+                        {% endif %}
+                        {% if current_user.can('show', user) %}
+                            <a class="btn btn-primary" href="{{ url_for('books.show_book', book_id=book.id)}}">Просмотр</a>
+                        {% endif %}
+                    {% else %}
+                        <span>Нет доступных действий</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            <li class="page-item {% if page_number == 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books.books', page_number = page_number - 1 )}}">Previous</a></li>
+            {% for page in range(start_page, end_page ) %}
+                <li class="page-item"><a class="page-link {% if page == page_number %} active {% endif %}" href="{{ url_for('books.books', page_number = page )}}">{{ page }}</a></li>
+            {% endfor %}
+            <li class="page-item {% if page_number == end_page - 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books.books', page_number = page_number + 1 )}}">Next</a></li>
+        </ul>
+    </nav>
+    {% else %}
+    <p>Пока нет книг</p>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+        {% if current_user.can('add_book', user) %}
+        <a class="btn btn-primary" href="{{ url_for('books.add_book') }}">Добавить книгу</a>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="modal" id="delete-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтвердите удаление книги</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-body-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                <form action="" method="post">
+                    <button type="submit" class="btn btn-danger">Да</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='books.js') }}" ></script> 
+
+{% endblock %}

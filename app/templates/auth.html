@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <form method="POST" class="mb-3">
+        <div class="mb-3">
+            <label class="form-label" for="login">Логин:</label>
+            <input class="form-control" type="text" id="login" name="login" placeholder="login" value="{{ request.form.login }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="pass">Логин:</label>
+            <input class="form-control" type="password" id="pass" name="pass" placeholder="password">
+        </div>
+        <div class="mb-3">
+            <input type="checkbox" id="remember" name="remember">
+            <label class="form-label" for="remember">Запомнить меня</label>
+        </div>
+        <button class="btn btn-primary">Авторизоваться</button>
+    </form>
+{% endblock %}

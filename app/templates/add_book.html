@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% from 'book_macros.html' import book_form %}
+
+{% block content %}
+    <h2>Добавление книги</h2>
+    {{ book_form( current_user,  genres, 'add', errors) }}
+{% endblock %}

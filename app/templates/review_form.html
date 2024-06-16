@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Добавление рецензии на книгу</h2>
+<form method="post">
+    <div class="my-3">        
+        <label class="form-label" for="score">Оценка</label>
+        <select class="form-select" name="score" id="score">
+            <option value="5" selected >{{ score_names[5] }}</option>
+            {% for score_ind in range(4,-1, -1) %}
+            <option value="{{ score_ind }}">{{ score_names[score_ind] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="review_text">Текст рецензии</label>
+        <textarea class="form-control" id="review_text" name="review_text" rows="3"></textarea>
+    </div>
+    <button class="btn btn-primary">Сохранить</button>
+</form>
+{% endblock %}
