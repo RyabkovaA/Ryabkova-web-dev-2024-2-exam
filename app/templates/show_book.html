@@ -5,7 +5,7 @@
     <div class="container my-3 d-flex flex-column">
         <div class="mb-3">
             <div class="container text-center">
-                <img src="{{ url_for('static', filename='/images/books/' ~ book.filename ) }}" class="img-fluid rounded-start" alt="{{ book.cover_name }}">
+                <img src="{{ url_for('static', filename='/images/books/' ~ book.filename ) }}" class="img-fluid rounded-start" alt="{{ book.cover_name }}" width="300" height="400">
             </div>
         </div>
         <div class="mb-3 text-center">
@@ -40,10 +40,10 @@
             {% endfor %}
         </div>
     </div>
-    <div class="container my-3 d-flex flex-column">
+    <div class="container mb-3 d-flex flex-column">
         {% if current_user.is_authenticated %}
             {% if user_review %}
-            <div class="container-fluid mb-5"> 
+            <div class="container-fluid mb-3"> 
                 <h5>Моя рецензия</h5>      
                 <div class="d-flex bg mt-3">
                     <div class="flex-shrink-0">
@@ -67,9 +67,10 @@
                 <a class="btn btn-primary" href="{{ url_for('books.add_review', book_id=book.id )}}">Написать рецензию</a>
             </div>
             {% endif %}
-            {% if reviews %}
-                {% for review in reviews %}
-                <div class="container-fluid my-5">       
+        {% endif %}
+        {% if reviews %}
+            {% for review in reviews %}
+                <div class="container-fluid my-3">       
                     <div class="d-flex">
                         <div class="flex-shrink-0">
                             <img src="{{ url_for('static', filename='images/icon2.png') }}" class="rounded-circle" alt="Sample Image">
@@ -87,10 +88,9 @@
                         </div>
                     </div>
                 </div>
-                {% endfor %}
-            {% elif not user_review %}
+            {% endfor %}
+        {% elif not user_review %}
                 <p>Ещё нет рецензий</p>
-            {% endif %}
         {% endif %}
     </div>
 {% endblock %}

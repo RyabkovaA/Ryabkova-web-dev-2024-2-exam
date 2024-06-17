@@ -20,7 +20,7 @@
         <tbody>
             {% for book in books %}
             <tr>
-                <td>{{ loop.index }}</td>
+                <td>{{ (page_number - 1) * 5 + loop.index }}</td>
                 <td>{{ book.name }}</td>
                 <td>
                     {% for genre in book.genres %}
@@ -41,12 +41,8 @@
                             data-delete-url="{{ url_for('books.delete_book', book_id=book.id)}}" 
                             data-book-name="{{ book.name }}">Удалить</button>
                         {% endif %}
-                        {% if current_user.can('show', user) %}
-                            <a class="btn btn-primary" href="{{ url_for('books.show_book', book_id=book.id)}}">Просмотр</a>
-                        {% endif %}
-                    {% else %}
-                        <span>Нет доступных действий</span>
                     {% endif %}
+                            <a class="btn btn-primary" href="{{ url_for('books.show_book', book_id=book.id)}}">Просмотр</a>
                 </td>
             </tr>
             {% endfor %}
@@ -54,11 +50,11 @@
     </table>
     <nav aria-label="Page navigation example">
         <ul class="pagination">
-            <li class="page-item {% if page_number == 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books.books', page_number = page_number - 1 )}}">Previous</a></li>
+            <li class="page-item {% if page_number == 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books', page_number = page_number - 1 )}}">Previous</a></li>
             {% for page in range(start_page, end_page ) %}
-                <li class="page-item"><a class="page-link {% if page == page_number %} active {% endif %}" href="{{ url_for('books.books', page_number = page )}}">{{ page }}</a></li>
+                <li class="page-item"><a class="page-link {% if page == page_number %} active {% endif %}" href="{{ url_for('books', page_number = page )}}">{{ page }}</a></li>
             {% endfor %}
-            <li class="page-item {% if page_number == end_page - 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books.books', page_number = page_number + 1 )}}">Next</a></li>
+            <li class="page-item {% if page_number == end_page - 1 %} disabled {% endif %}"><a class="page-link" href="{{ url_for('books', page_number = page_number + 1 )}}">Next</a></li>
         </ul>
     </nav>
     {% else %}
@@ -90,7 +86,8 @@
         </div>
     </div>
 </div>
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script src="{{ url_for('static', filename='main.js') }}" ></script> 
 
-<script src="{{ url_for('static', filename='books.js') }}" ></script> 
 
 {% endblock %}

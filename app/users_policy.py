@@ -19,8 +19,9 @@ class UsersPolicy:
     def show(self):
         return True 
     
-    def assign_roles(self):
-        return current_user.is_admin()    
+    def add_review(self):
+        return current_user.is_authenticated
+
 
 
 

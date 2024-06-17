@@ -40,7 +40,7 @@ def can_user(action):
 
             if not current_user.can(action, user):
                 flash("У вас недостаточно прав для выполнения данного действия", category='warning')
-                return redirect(url_for("books.books"))
+                return redirect(url_for("books"))
             return func(*args, **kwargs)
         return wrapper
     return decorator
@@ -95,7 +95,7 @@ def login():
     if user is not None:
         login_user(User(user.id, user.login, user.role_id, user.full_name), remember=remember)
         flash("Авторизация прошла успешно", category='success')
-        target_page = request.args.get("next", url_for('books.books'))
+        target_page = request.args.get("next", url_for('books'))
         return redirect(target_page)
                   
     flash("Невозможно аутентифицироваться с указанными логином и паролем", category='danger')
@@ -104,4 +104,4 @@ def login():
 @bp.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('books.books'))
+    return redirect(url_for('books'))

@@ -5,4 +5,10 @@
 {% block content %}
     <h2>Добавление книги</h2>
     {{ book_form( current_user, genres, 'add', book, errors) }}
+
+    
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+
+    <script defer src="{{ url_for('static', filename='main.js')}}"></script>
+
 {% endblock %}

@@ -6,18 +6,18 @@ import math
 from hashlib import md5
 import bleach
 import markdown
-from werkzeug.utils import secure_filename
 import os
 from uuid import uuid4
+from authorization import can_user
 
 
 bp = Blueprint('books', __name__, url_prefix='/books')
 ADD_BOOK_FIELDS = ['name', 'author', 'year_pub', 'publishment', 'pages', 'description']
-PAGE_COUNT = 10
 EDIT_BOOK_FIELDS = ['name', 'author', 'year_pub', 'publishment', 'pages', 'description']
 CHECK_BOOK_FIELDS = ['name', 'author', 'year_pub', 'publishment', 'pages', 'description']
 SCORE_NAMES = ['ужасно', 'плохо', 'неудовлетворительно', 'удовлетворительно', 'хорошо', 'отлично']
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+PAGE_COUNT = 10
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -53,6 +53,7 @@ def get_reviews(book_id):
     with db_connector.connect().cursor(named_tuple=True, buffered=True) as cursor:
         cursor.execute(query, (book_id, ))
         reviews = cursor.fetchall()
+
     return reviews
 
 def get_user_review(user_id, book_id):
@@ -61,12 +62,25 @@ def get_user_review(user_id, book_id):
     with db_connector.connect().cursor(named_tuple=True, buffered=True) as cursor:
         cursor.execute(query, (book_id, user_id))
         review = cursor.fetchone()
-    return review
+    
+    review_dict = None
+    if review:
+        review_dict = review._asdict()
+        review_dict['review_text'] = markdown.markdown(review.review_text)
+
+    return review_dict
 
 @bp.route('/<int:book_id>/review', methods=["GET","POST"]) 
+@login_required
+@can_user('add_review')
 def add_review(book_id):
     error = None
     if request.method == 'POST':
+        user_review = get_user_review(current_user.id, book_id)
+        if user_review != None:
+            flash('Вы уже оставляли отзыв на эту книгу!', category="danger")
+            return redirect(url_for('books.show_book', book_id=book_id))
+        
         review_text = get_form_data(['review_text'])['review_text']
         score = request.form.get('score')
 
@@ -74,6 +88,7 @@ def add_review(book_id):
             flash('Добавьте текст рецензии!', category="danger")
             return render_template("review_form.html", score_names=SCORE_NAMES, error=error)
         
+
         query = ("INSERT INTO reviews (book_id, user_id, score, review_text) "
                  "VALUES (%s, %s, %s, %s)")
         try:
@@ -98,19 +113,20 @@ def show_book(book_id):
         book = cursor.fetchone()
     book_data = form_book_data(book)
     reviews = get_reviews(book_id)
-    # review_ids = [review.user_id for review in reviews]
-    print(current_user.id)
-    user_review = get_user_review(current_user.id, book_id)
-    print("user review", user_review)
-    
-    if user_review:
-        reviews = [review for review in reviews if review.user_id != user_review.user_id]
+    user_review = None
 
-    # if str(current_user.id) in review_ids:
-    #     print("user_reviews ids,", review_ids)
-    #     user_review = get_user_review(current_user.id, book_id)
-    #     print("user review", user_review)
-    return render_template("show_book.html", book=book_data, reviews=reviews, user_review=user_review, score_names=SCORE_NAMES)
+    if current_user.is_authenticated:
+        user_review = get_user_review(current_user.id, book_id)
+
+    if user_review:
+        reviews = [review for review in reviews if review.user_id != user_review['user_id']]
+    reviews_dict = []
+    for review in reviews:
+        review_dict = review._asdict()
+        review_dict['review_text'] = markdown.markdown(review.review_text)
+        reviews_dict.append(review_dict)
+
+    return render_template("show_book.html", book=book_data, reviews=reviews_dict, user_review=user_review, score_names=SCORE_NAMES)
 
 def form_book_data(book):
     book_dict = book._asdict()
@@ -123,36 +139,6 @@ def form_book_data(book):
     book_dict['description'] = markdown.markdown(book.description)
 
     return book_dict
-
-
-@bp.route('/', methods=["GET","POST"]) 
-def books():
-    books = []
-    page_number = request.args.get('page_number', 1, type=int)
-    try:
-        query = ("SELECT * FROM books ORDER BY year_pub DESC "
-                f"LIMIT {PAGE_COUNT} OFFSET {PAGE_COUNT*(page_number - 1)}")
-        with db_connector.connect().cursor(named_tuple=True) as cursor:
-            cursor.execute(query)
-            books = cursor.fetchall()
-
-            query2 = ("SELECT COUNT(*) AS count FROM books")
-            cursor.execute(query2)
-            total_count = cursor.fetchone().count  
-            print(total_count)
-            total_pages = math.ceil(total_count / PAGE_COUNT + 1)
-            start_page = max(page_number - 3, 1)
-            end_page = min(page_number + 3, total_pages)
-
-        books_dict = []
-        for book in books:
-            book_dict = form_book_data(book)
-            books_dict.append(book_dict)
-        print(books_dict)
-        return render_template("index.html", books=books_dict, start_page=start_page, end_page=end_page, page_number=page_number)
-    
-    except DatabaseError as error:
-        print(f"Произошла ошибка при получении данных: {error}") 
 
 def get_genres():
     genres = []
@@ -182,6 +168,7 @@ def get_hashes_match(image_hash):
 
 @bp.route('/new',  methods=["GET", "POST"])
 @login_required
+@can_user('add_book')
 def add_book():
     errors={}
     genres = get_genres()
@@ -194,7 +181,6 @@ def add_book():
         if not book_genres:
             errors['genres'] = "Выберите жанры"
         image_file = request.files['cover']
-        print(image_file.filename)
         if not image_file.filename or not allowed_file(image_file.filename):
             errors['cover'] = "Выберите файл с одним из допустимых расширений: png, jpg, jpeg"
 
@@ -216,7 +202,7 @@ def add_book():
                         if insert_genres_data(book_genres, book_id, connection):
                             connection.commit()
                             flash('Данные о книге успешно обновлены!', category="success")
-                            return redirect(url_for("books.books"))
+                            return redirect(url_for("books"))
                         else:
                             connection.rollback()
                             flash('Ошибка обновления данных о книге!', category="danger")
@@ -238,6 +224,7 @@ def add_book():
                     'mime_type' : cover_mimetype,
                     'md5_hash' : image_hash
                     }
+                
                 print(cover_dict)
                 query = ("INSERT INTO covers (id, name, mime_type, md5_hash) "
                          "VALUES (%(id)s, %(name)s, %(mime_type)s, %(md5_hash)s)")
@@ -257,7 +244,7 @@ def add_book():
                         if insert_genres_data(book_genres, book_id, connection):
                             connection.commit()
                             flash('Данные о книге успешно добавлены!', category="success")
-                            return redirect(url_for("books.books"))
+                            return redirect(url_for("books"))
                         else:
                             connection.rollback()
                             flash('Ошибка добавления данных о книге!', category="danger")
@@ -267,13 +254,8 @@ def add_book():
            
         else:
             book_form_data['genres'] = [str(genre_id) for genre_id in request.form.getlist('genres[]')]
-            print(book_form_data)
-            print(errors)
 
             return render_template("add_book.html", errors=errors, genres=genres, book=book_form_data)
-
- 
-    print(errors)
 
 
     return render_template("add_book.html", errors=errors, genres=genres, book=None)
@@ -310,6 +292,7 @@ def check_number(number):
 
 @bp.route('/<int:book_id>/edit', methods=['GET', 'POST'])
 @login_required
+@can_user('edit')
 def edit_book(book_id):
     errors = {}
     query = "SELECT * FROM books WHERE books.id=%s"
@@ -345,7 +328,7 @@ def edit_book(book_id):
                     if update_genres_data(new_book_genres, book_id, connection):
                         connection.commit()
                         flash('Данные о книге успешно обновлены!', category="success")
-                        return redirect(url_for("books.books"))
+                        return redirect(url_for("books"))
                     else:
                         connection.rollback()
                         flash('Ошибка обновления данных о книге!', category="danger")
@@ -407,6 +390,7 @@ def get_cover_path(cover_id):
 
 @bp.route('/delete/<int:book_id>', methods=['POST'])
 @login_required
+@can_user('delete')
 def delete_book(book_id):
     try:
         connection = db_connector.connect()
@@ -421,6 +405,11 @@ def delete_book(book_id):
             book_query = "DELETE FROM books WHERE id = %s"
             cursor.execute(book_query, (book_id,))
             connection.commit()
+
+            cover_query = "DELETE FROM covers WHERE id = %s"
+            cursor.execute(cover_query, (cover_id,))
+            connection.commit()
+
             
             if cover_path and os.path.exists(cover_path):
                 os.remove(cover_path)
@@ -431,4 +420,4 @@ def delete_book(book_id):
         flash(f'Ошибка при удалении книги: {error}', category='danger')
 
 
-    return redirect(url_for('books.books'))
+    return redirect(url_for('books'))

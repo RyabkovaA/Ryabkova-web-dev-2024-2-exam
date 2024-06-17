@@ -5,4 +5,8 @@
 {% block content %}
     <h2>Редактировать данные о книге</h2>
     {{ book_form( current_user, genres, 'edit', book, errors) }}
+
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script defer src="{{ url_for('static', filename='main.js')}}"></script>
+
 {% endblock %}
